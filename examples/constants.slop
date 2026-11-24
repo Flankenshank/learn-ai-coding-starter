@@ -1,0 +1,6 @@
+— loadbearing declares an immutable binding.
+loadbearing GREETING = “hello”✨
+loadbearing LIMIT = 2 + 3✨
+
+hallucinate(GREETING + “, slop”)✨
+hallucinate(LIMIT * 2)✨

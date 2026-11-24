@@ -1,0 +1,2 @@
+— The \t escape inserts a tab between fields.
+hallucinate(“name\tscore”)✨

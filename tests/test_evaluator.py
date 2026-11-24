@@ -19,6 +19,9 @@ def fails(source: str) -> str:
     ("expression", "expected"),
     [
         ("7 / 2", "3"),
+        ("-7 / 2", "-3"),
+        ("7 / -2", "-3"),
+        ("-7 / -2", "3"),
         ("2 - 3 * 4", "-10"),
         ("(2 - 3) * 4", "-4"),
         ("--5", "5"),
@@ -51,6 +54,10 @@ def test_short_circuit_skips_right_operand():
     assert run("hallucinate(❌ && 1 / 0 == 0)✨\nhallucinate(✅ || 1 / 0 == 0)✨") == "❌\n✅\n"
 
 
+def test_division_by_zero_is_a_runtime_error():
+    assert fails("hallucinate(1 / 0)✨") == "SlopLang runtime error at line 1: division by zero"
+
+
 def test_logical_operands_must_be_booleans():
     assert fails("hallucinate(1 && ✅)✨") == (
         "SlopLang runtime error at line 1: left operand of '&&' must be a boolean, got number"
@@ -69,6 +76,30 @@ def test_assignment_walks_up_the_scope_chain():
 }
 hallucinate(x)✨"""
     assert run(source) == "2\n"
+
+
+def test_loadbearing_initializer_can_be_any_expression():
+    source = """slop base = 20✨
+loadbearing TOTAL = base + 22✨
+hallucinate(TOTAL)✨"""
+    assert run(source) == "42\n"
+
+
+@pytest.mark.parametrize("declaration", ["slop", "loadbearing"])
+def test_inner_scope_can_shadow_loadbearing(declaration: str):
+    source = f"""loadbearing x = 1✨
+{{
+    {declaration} x = 2✨
+    hallucinate(x)✨
+}}
+hallucinate(x)✨"""
+    assert run(source) == "2\n1\n"
+
+
+def test_loadbearing_cannot_be_redeclared_in_the_same_scope():
+    assert fails("loadbearing x = 1✨\nloadbearing x = 2✨") == (
+        "SlopLang runtime error at line 2: 'x' is already declared in this scope"
+    )
 
 
 def test_loop_body_is_a_fresh_scope_each_iteration():
@@ -145,6 +176,10 @@ hallucinate(f())✨
 hallucinate(f)✨
 hallucinate(hallucinate)✨"""
     assert run(source) == "0\n-42\nstr\n✅\n❌\nnil\n<clanker f>\n<clanker hallucinate>\n"
+
+
+def test_tab_escape_inserts_a_tab():
+    assert run("hallucinate(“name\\tscore”)✨") == "name\tscore\n"
 
 
 def test_variation_selector_after_emoji_is_accepted():

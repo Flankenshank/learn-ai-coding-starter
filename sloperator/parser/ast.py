@@ -96,6 +96,7 @@ class VarDecl(Stmt):
     name: Token
     initializer: Expr
     mutable: bool
+    declaration_kind: str = "slop"
 
 
 @dataclass(frozen=True)
